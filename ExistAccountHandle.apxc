@@ -1,0 +1,27 @@
+public class ExistAccountHandle {
+    private static List<User> users;
+
+	@InvocableMethod(label='Handle existing accounts' description='.' category='Account')
+    public static void handleExistingAccounts(List<ID> ids) {
+        List<Account> accounts = [Select id, (select id from Tasks) from Account where id in :ids];
+        List<Task> taskToUpdate = new List<Task>();
+        for (Account acc :accounts) {
+            List<Task> tasks = (List<Task>)acc.getSObjects('Tasks');
+            if (!tasks.isEmpty() && tasks.size() > 3) {
+                for (Task t: tasks) {
+                    t.WhoId = getRandomUserId();
+                    taskToUpdate.add(t);
+                }
+            }
+        }
+        update taskToUpdate;
+    }
+
+    private static Id getRandomUserId(){
+        if (users == NULL) {
+            users = [SELECT Id FROM User WHERE isActive = TRUE];
+        }
+        Integer rand = Math.floor(Math.random() * users.size()).intValue();
+        return users.get(rand).Id;
+    }
+}

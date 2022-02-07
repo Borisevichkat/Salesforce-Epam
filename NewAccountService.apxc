@@ -1,0 +1,15 @@
+public class NewAccountService {
+    @InvocableMethod(label='Handle new accounts' description='.' category='Account')
+    public static void handleNewAccounts(List<ID> ids) {
+        List<Account> accounts = [Select id, Name from Account where id in :ids];
+        List<Task> tasks = new List<Task>();
+        for (Account acc :accounts) {
+            Task newTask = new Task(
+                WhatId = acc.Id,
+                Subject = 'Negotiations with ' + acc.Name
+            );
+            tasks.add(newTask);
+        }
+        insert tasks;
+    }
+}
