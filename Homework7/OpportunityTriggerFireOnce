@@ -1,0 +1,24 @@
+trigger OpportunityTriggerFireOnce on Opportunity (after update) {
+    
+    if(RecursionBlock.Flag = true){
+           RecursionBlock.Flag = false;
+          for (Opportunity o : Trigger.new)
+    {
+    Opportunity opp =[select ID,Name, StageName,AccountId  from Opportunity where ID =:o.id];
+        if (Trigger.isUpdate)
+        {         
+          account acct=[select ID, Name from account where  id =:opp.AccountId];
+           if(opp.StageName=='Suspend')
+           {
+          
+            acct.Status__c='Suspend';
+            update acct;  
+                            
+           }       
+        }
+      
+    }
+    }
+      
+
+}
