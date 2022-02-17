@@ -1,0 +1,31 @@
+public class BatchJobWithQueryLocator implements Database.Batchable<sObject> {
+    
+    public Database.QueryLocator start(Database.BatchableContext bc) {
+        return Database.getQueryLocator('SELECT ID, WhatId FROM Task Where Is_Synced__c = false');
+    }
+        public void execute(Database.BatchableContext bc, List<Task> records){
+            Set<Id> taskAccIds = new Set<Id>();
+            for(Task t: records){
+                taskAccIds.add(t.WhatId);
+            }
+            
+             List<Account> accs = [SELECT id, owner.Name FROM Account WHERE id in : taskAccIds];
+            
+            Map<Id, String> namesByAccId = new Map<Id, String>();
+            
+            for (Account a :accs){
+                namesByAccId.put(a.id, a.owner.Name);
+                a.Updated_By_Task__c = true;
+            }
+            for(Task t : records){
+               t.Account_Owner__c = namesByAccId.get(t.WhatId);
+               t.Is_Synced__c = true; 
+            }
+            update accs;
+            update records;
+    }
+    
+    public void finish(Database.BatchableContext bc){
+        // execute any post-processing operations
+    }
+}
