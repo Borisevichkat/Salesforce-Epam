@@ -1,0 +1,19 @@
+public class QueuebleJob implements Queueable{
+    
+    public Set<Id> accIds;
+    public QueuebleJob(Set<Id> accIds){
+        this.accIds = accIds;
+    }
+	  public void execute(QueueableContext context) {
+        List<Contact> contactToUpdate = [SELECT Id, Is_Synced__c, Processed_By_Future__c 
+                                         FROM Contact
+                                         WHERE AccountId in :accIds];
+        for(Contact c : contactToUpdate){
+            c.is_Synced__c = false;
+            c.Processed_By_Queue__c = true;
+        }
+       
+        update contactToUpdate;      
+    }    
+
+}
