@@ -1,0 +1,40 @@
+public class BatchJobWithIterable implements Database.Batchable<Contact>{
+    
+   public Iterable<Contact> start(Database.BatchableContext bc){
+        List<Contact> records = [SELECT Id, MailingAddress, Is_Synced__c
+                                  FROM Contact WHERE Is_Synced__c = false];
+        return records; 
+    }
+	
+    public void execute(Database.BatchableContext bc, List<Contact> records){
+            Set<Id> accIds = new Set<Id>();
+        
+        For(Contact c : records){
+            accIds.add(c.AccountId);
+        }
+        
+       // List<Account> accounts = [SELECT Id, BillingAddress FROM Account WHERE Id in:accIds];
+       Map<Id, Account> accounts = new Map<Id, Account>(
+           [SELECT Id, BillingStreet,BillingCity,BillingState,BillingPostalCode
+            FROM Account WHERE Id in:accIds]);
+                                                         
+        
+        for(Contact c: records){
+           c.MailingStreet = accounts.get(c.AccountId).BillingStreet;
+           c.MailingCity =  accounts.get(c.AccountId).BillingCity;
+           c.MailingState = accounts.get(c.AccountId).BillingState;
+           c.MailingPostalCode = accounts.get(c.AccountId).BillingPostalCode;
+           
+        }
+        
+        for(Account a: accounts.values()){
+            a.Updated_By_Contact__c = true;
+        }
+        update accounts.values();
+    	update records;
+    }
+    
+    public void finish(Database.BatchableContext bc){
+        // execute any post-processing operations
+    }
+}
