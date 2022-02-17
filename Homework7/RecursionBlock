@@ -1,0 +1,3 @@
+public class RecursionBlock {
+	public static Boolean flag = true;
+}
