@@ -1,0 +1,47 @@
+public class AccountTriggerHandler {
+    
+    @future
+    public static void createTask(Set<Id> accIds){
+        
+        List <Task> createdTasks = new List<Task>();
+        for(Id a: accIds){
+            Task newTask = new Task();
+            newTask.WhatId = a;
+            newTask.Is_Synced__c = false;
+            createdTasks.add(newTask);
+        }
+      insert createdTasks;
+    }
+     
+    public static void afterInsert(Map<Id, Account> newAccs){
+        Set<Id> accIds = newAccs.keySet();
+		createTask(accIds);        
+    } 
+    
+    @future
+    private static void updateRelatedContacts(Set<ID> accountIds){
+        List<Contact> contactToUpdate = [SELECT Id, Is_Synced__c, Processed_By_Future__c 
+                                         FROM Contact
+                                         WHERE AccountId in :accountIds];
+        for(Contact c : contactToUpdate){
+            c.is_Synced__c = false;
+            c.Processed_By_Future__c = true;
+        }
+       
+        update contactToUpdate;        
+    }
+    
+    public static void afterUpdate(List<Account> newValues, Map<Id,Account> oldValuesMap){
+        
+        Set<Id> updatedAccIds = new Set<Id>();
+        for(Account a: newValues){
+            
+            if(oldValuesMap.get(a.id).BillingAddress != a.BillingAddress){
+                updatedAccIds.add(a.id);
+            }
+             
+         }
+        updateRelatedContacts(updatedAccIds);
+        System.enqueueJob(new QueuebleJob(updatedAccIds));
+    }
+}
